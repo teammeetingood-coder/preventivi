@@ -66,6 +66,27 @@
   .btn-secondary:hover{background:var(--blue-light);}
   .btn-danger{background:#fff; color:#b4472f; border:1px solid #f0c9bd;}
   .btn-danger:hover{background:#fdf1ee;}
+  .btn-toggle-active{background:var(--navy); color:#fff; border:1px solid var(--navy);}
+  .btn-toggle-active:hover{background:var(--blue-dark);}
+  .lang-toggle{
+    display:flex;
+    border:1px solid var(--line);
+    border-radius:7px;
+    overflow:hidden;
+  }
+  .lang-btn{
+    background:#fff;
+    color:var(--navy);
+    border:none;
+    border-radius:0;
+    padding:9px 12px;
+    font-size:12px;
+    font-weight:700;
+  }
+  .lang-btn + .lang-btn{ border-left:1px solid var(--line);}
+  .lang-btn:hover{background:var(--blue-light);}
+  .lang-btn.active{background:var(--navy); color:#fff;}
+  .lang-btn.active:hover{background:var(--navy);}
 
   .meta-card{
     background:var(--paper);
@@ -276,15 +297,19 @@
     color:var(--navy);
     background:var(--blue-band);
     border-top:2px solid var(--navy);
+    text-align:center;
   }
   tfoot .tot-label{ text-align:left; font-size:13px;}
-  tfoot .grand-row td{
-    background:var(--navy);
-    color:#fff;
-    font-size:15px;
-    border-radius:0 0 6px 6px;
+  tfoot tr:last-child td:first-child{border-radius:0 0 0 6px;}
+  tfoot tr:last-child td:last-child{border-radius:0 0 6px 0;}
+  tfoot .dashboard-row td{
+    background:#fff;
+    color:#5a6785;
+    font-weight:600;
+    font-size:12px;
+    border-top:1px solid var(--line);
   }
-  tfoot .grand-row td:first-child{border-radius:0 0 0 6px;}
+  tfoot .dashboard-row .tot-label{font-weight:600;}
 
   .add-row-bar{
     margin-top:10px;
@@ -323,40 +348,45 @@
 
   <div class="toolbar">
     <div>
-      <h1>Generatore Preventivi — Meetingood</h1>
-      <div class="sub">Compila la tabella, il totale si aggiorna da solo. Scarica come immagine da allegare all'email.</div>
+      <h1 id="txtH1">Generatore Preventivi — Meetingood</h1>
+      <div class="sub" id="txtSub">Compila la tabella, il totale si aggiorna da solo. Scarica come immagine da allegare all'email.</div>
     </div>
     <div class="btns">
+      <div class="lang-toggle" id="langToggle">
+        <button class="lang-btn active" data-lang="it" id="langBtnIt">IT</button>
+        <button class="lang-btn" data-lang="en" id="langBtnEn">EN</button>
+      </div>
       <button class="btn-secondary" id="newQuoteBtn">＋ Nuovo preventivo</button>
       <button class="btn-secondary" id="historyBtn">🕘 Cronologia</button>
       <button class="btn-secondary" id="addRowBtn">+ Riga mercato</button>
+      <button class="btn-secondary" id="dashboardBtn">📊 Dashboard</button>
       <button class="btn-primary" id="downloadBtn">⬇ Scarica come immagine</button>
     </div>
   </div>
 
   <div class="meta-card">
     <div class="meta-field">
-      <label>Cliente</label>
+      <label id="lblClient">Cliente</label>
       <input type="text" id="clientName" placeholder="Nome cliente / istituto">
     </div>
     <div class="meta-field">
-      <label>Progetto</label>
+      <label id="lblProject">Progetto</label>
       <input type="text" id="projectName" placeholder="Nome progetto / studio">
     </div>
     <div class="meta-field">
-      <label>Rif. preventivo</label>
+      <label id="lblRef">Rif. preventivo</label>
       <input type="text" id="quoteRef" placeholder="es. PRE-2026-014">
     </div>
     <div class="meta-field">
-      <label>Data</label>
+      <label id="lblDate">Data</label>
       <input type="date" id="quoteDate">
     </div>
   </div>
 
   <div class="history-panel" id="historyPanel">
     <div class="history-head">
-      <h2>Cronologia preventivi</h2>
-      <span class="history-note">Salvata solo in questo browser (locale, nessun database) — creando un nuovo preventivo, quello attuale viene archiviato qui.</span>
+      <h2 id="txtHistoryTitle">Cronologia preventivi</h2>
+      <span class="history-note" id="txtHistoryNote">Salvata solo in questo browser (locale, nessun database) — creando un nuovo preventivo, quello attuale viene archiviato qui.</span>
     </div>
     <div id="historyList"></div>
   </div>
@@ -365,7 +395,7 @@
     <div class="doc-head">
       <div class="brand">
         <img src="assets/logo.png" alt="Meetingood logo">
-        <div class="brand-text">Meeting<span>good</span><span class="brand-sub">online focus group by fieldgood</span></div>
+        <div class="brand-text">Meeting<span>good</span><span class="brand-sub" id="txtBrandSub">online focus group by fieldgood</span></div>
       </div>
       <div class="doc-meta" id="docMetaOut">
         <div><b>Cliente:</b> —</div>
@@ -377,29 +407,29 @@
     <table>
       <thead>
         <tr>
-          <th style="width:14%">Market</th>
-          <th>N</th>
-          <th>LOI</th>
-          <th>Resp's</th>
-          <th>€/h</th>
-          <th>Transcripts</th>
-          <th>Blurring &amp;<br>Morphing</th>
-          <th>N.<br>Overtime</th>
-          <th>€ Tot</th>
+          <th style="width:14%" id="thMarket">Market</th>
+          <th id="thN">N</th>
+          <th id="thLoi">LOI</th>
+          <th id="thResp">Resp's</th>
+          <th id="thRate">€/h</th>
+          <th id="thTranscripts">Transcripts</th>
+          <th id="thBlurring">Blurring &amp;<br>Morphing</th>
+          <th id="thOvertime">N.<br>Overtime</th>
+          <th id="thTot">€ Tot</th>
           <th></th>
         </tr>
       </thead>
       <tbody id="rowsBody"></tbody>
       <tfoot>
-        <tr>
-          <td class="tot-label">TOT</td>
-          <td id="totN">0</td>
-          <td></td><td></td><td></td><td></td><td></td><td></td>
-          <td id="totEuroSmall">€ 0,00</td>
+        <tr id="dashboardRow" class="dashboard-row" style="display:none;">
+          <td class="tot-label" colspan="8" id="txtDashboardLine">Dashboard (<span id="dashboardN">0</span> interviste × € 10,00)</td>
+          <td id="dashboardCost">€ 0,00</td>
           <td></td>
         </tr>
-        <tr class="grand-row">
-          <td class="tot-label" colspan="8">TOTALE PREVENTIVO</td>
+        <tr>
+          <td class="tot-label" id="txtTotLabel">TOT</td>
+          <td id="totN">0</td>
+          <td></td><td></td><td></td><td></td><td></td><td></td>
           <td id="grandTotal">€ 0,00</td>
           <td></td>
         </tr>
@@ -407,15 +437,166 @@
     </table>
   </div>
 
-  <div class="formula-hint">
+  <div class="formula-hint" id="txtFormulaHint">
     Formula riga: <code>€ Tot = N × LOI × (€/h + Transcripts + Blurring &amp; Morphing) + N.Overtime × LOI × 10</code>.
     Esempio: 5 interviste, 2 in overtime, €/h 45 → 3×45 + 2×55 = 245 €. La maggiorazione overtime è fissa a 10€/h.
-    Resp's è un campo informativo e non entra nel calcolo.
+    Resp's è un campo informativo e non entra nel calcolo. Se attivi "Dashboard", si aggiungono 10€ per ogni intervista di tutto il preventivo (tutti i mercati).
   </div>
 
 </div>
 
 <script>
+// ---------- Traduzioni IT/EN ----------
+const I18N = {
+  it: {
+    h1: 'Generatore Preventivi — Meetingood',
+    sub: "Compila la tabella, il totale si aggiorna da solo. Scarica come immagine da allegare all'email.",
+    newQuote: '＋ Nuovo preventivo',
+    history: '🕘 Cronologia',
+    addRow: '+ Riga mercato',
+    dashboard: '📊 Dashboard',
+    download: '⬇ Scarica come immagine',
+    lblClient: 'Cliente',
+    lblProject: 'Progetto',
+    lblRef: 'Rif. preventivo',
+    lblDate: 'Data',
+    phClient: 'Nome cliente / istituto',
+    phProject: 'Nome progetto / studio',
+    phRef: 'es. PRE-2026-014',
+    brandSub: 'focus group online by fieldgood',
+    historyTitle: 'Cronologia preventivi',
+    historyNote: 'Salvata solo in questo browser (locale, nessun database) — creando un nuovo preventivo, quello attuale viene archiviato qui.',
+    historyEmpty: 'Nessun preventivo salvato ancora. Verrà aggiunto qui ogni volta che clicchi "Nuovo preventivo".',
+    load: 'Carica',
+    del: 'Elimina',
+    delRowTitle: 'Elimina riga',
+    noRef: 'Senza rif.',
+    noClient: 'Cliente n.d.',
+    noProject: 'Progetto n.d.',
+    docClient: 'Cliente:',
+    docProject: 'Progetto:',
+    docRef: 'Rif.:',
+    docDate: 'Data:',
+    marketPh: 'Mercato',
+    thMarket: 'Market',
+    thN: 'N',
+    thLoi: 'LOI',
+    thResp: "Resp's",
+    thRate: '€/h',
+    thTranscripts: 'Transcripts',
+    thBlurring: 'Blurring &<br>Morphing',
+    thOvertime: 'N.<br>Overtime',
+    thTot: '€ Tot',
+    totLabel: 'TOT',
+    dashboardLine: n => `Dashboard (${n} interviste × € 10,00)`,
+    formulaHint: 'Formula riga: <code>€ Tot = N × LOI × (€/h + Transcripts + Blurring &amp; Morphing) + N.Overtime × LOI × 10</code>. Esempio: 5 interviste, 2 in overtime, €/h 45 → 3×45 + 2×55 = 245 €. La maggiorazione overtime è fissa a 10€/h. Resp\'s è un campo informativo e non entra nel calcolo. Se attivi "Dashboard", si aggiungono 10€ per ogni intervista di tutto il preventivo (tutti i mercati).'
+  },
+  en: {
+    h1: 'Quote Generator — Meetingood',
+    sub: 'Fill in the table, the total updates automatically. Download as an image to attach to your email.',
+    newQuote: '＋ New quote',
+    history: '🕘 History',
+    addRow: '+ Market row',
+    dashboard: '📊 Dashboard',
+    download: '⬇ Download as image',
+    lblClient: 'Client',
+    lblProject: 'Project',
+    lblRef: 'Quote ref.',
+    lblDate: 'Date',
+    phClient: 'Client / institute name',
+    phProject: 'Project / study name',
+    phRef: 'e.g. QUO-2026-014',
+    brandSub: 'online focus group by fieldgood',
+    historyTitle: 'Quote history',
+    historyNote: 'Saved only in this browser (local, no database) — creating a new quote archives the current one here.',
+    historyEmpty: 'No quotes saved yet. One will be added here every time you click "New quote".',
+    load: 'Load',
+    del: 'Delete',
+    delRowTitle: 'Delete row',
+    noRef: 'No ref.',
+    noClient: 'No client',
+    noProject: 'No project',
+    docClient: 'Client:',
+    docProject: 'Project:',
+    docRef: 'Ref.:',
+    docDate: 'Date:',
+    marketPh: 'Market',
+    thMarket: 'Market',
+    thN: 'N',
+    thLoi: 'LOI',
+    thResp: "Resp's",
+    thRate: '€/h',
+    thTranscripts: 'Transcripts',
+    thBlurring: 'Blurring &<br>Morphing',
+    thOvertime: 'No.<br>Overtime',
+    thTot: '€ Total',
+    totLabel: 'TOTAL',
+    dashboardLine: n => `Dashboard (${n} interviews × € 10.00)`,
+    formulaHint: 'Row formula: <code>€ Total = N × LOI × (€/h + Transcripts + Blurring &amp; Morphing) + No.Overtime × LOI × 10</code>. Example: 5 interviews, 2 overtime, €/h 45 → 3×45 + 2×55 = € 245. The overtime surcharge is fixed at €10/h. Resp\'s is an informational field and is not used in the calculation. If you turn on "Dashboard", €10 is added for every interview across the whole quote (all markets).'
+  }
+};
+
+let currentLang = localStorage.getItem('meetingood_lang') || 'it';
+
+function t(key){
+  return I18N[currentLang][key];
+}
+
+function applyLanguage(lang){
+  currentLang = lang;
+  try{ localStorage.setItem('meetingood_lang', lang); }catch(e){}
+
+  document.getElementById('langBtnIt').classList.toggle('active', lang === 'it');
+  document.getElementById('langBtnEn').classList.toggle('active', lang === 'en');
+  document.documentElement.lang = lang;
+
+  document.getElementById('txtH1').textContent = t('h1');
+  document.getElementById('txtSub').textContent = t('sub');
+  document.getElementById('newQuoteBtn').textContent = t('newQuote');
+  document.getElementById('historyBtn').textContent = t('history');
+  document.getElementById('addRowBtn').textContent = t('addRow');
+  document.getElementById('dashboardBtn').textContent = t('dashboard');
+  document.getElementById('downloadBtn').textContent = t('download');
+
+  document.getElementById('lblClient').textContent = t('lblClient');
+  document.getElementById('lblProject').textContent = t('lblProject');
+  document.getElementById('lblRef').textContent = t('lblRef');
+  document.getElementById('lblDate').textContent = t('lblDate');
+  document.getElementById('clientName').placeholder = t('phClient');
+  document.getElementById('projectName').placeholder = t('phProject');
+  document.getElementById('quoteRef').placeholder = t('phRef');
+
+  document.getElementById('txtBrandSub').textContent = t('brandSub');
+  document.getElementById('txtHistoryTitle').textContent = t('historyTitle');
+  document.getElementById('txtHistoryNote').textContent = t('historyNote');
+
+  document.getElementById('thMarket').textContent = t('thMarket');
+  document.getElementById('thN').textContent = t('thN');
+  document.getElementById('thLoi').textContent = t('thLoi');
+  document.getElementById('thResp').textContent = t('thResp');
+  document.getElementById('thRate').textContent = t('thRate');
+  document.getElementById('thTranscripts').textContent = t('thTranscripts');
+  document.getElementById('thBlurring').innerHTML = t('thBlurring');
+  document.getElementById('thOvertime').innerHTML = t('thOvertime');
+  document.getElementById('thTot').textContent = t('thTot');
+  document.getElementById('txtTotLabel').textContent = t('totLabel');
+  document.getElementById('txtFormulaHint').innerHTML = t('formulaHint');
+
+  document.querySelectorAll('.market-input').forEach(inp => {
+    inp.placeholder = t('marketPh');
+  });
+  document.querySelectorAll('.del-row').forEach(btn => {
+    btn.title = t('delRowTitle');
+  });
+
+  updateMeta();
+  recalc();
+  renderHistory();
+}
+
+document.getElementById('langBtnIt').addEventListener('click', () => applyLanguage('it'));
+document.getElementById('langBtnEn').addEventListener('click', () => applyLanguage('en'));
+
 let rowId = 0;
 const rowsBody = document.getElementById('rowsBody');
 
@@ -437,7 +618,7 @@ function createRow(data){
   const tr = document.createElement('tr');
   tr.dataset.id = id;
   tr.innerHTML = `
-    <td class="market-cell"><input class="market-input" type="text" value="${data.market}" placeholder="Mercato"></td>
+    <td class="market-cell"><input class="market-input" type="text" value="${data.market}" placeholder="${t('marketPh')}"></td>
     <td><input class="f-n" type="number" min="0" step="1" inputmode="numeric" value="${Math.round(data.n)}"></td>
     <td><input class="f-loi" type="number" min="0" step="0.01" value="${data.loi}"></td>
     <td><input class="f-resp" type="number" min="0" step="1" inputmode="numeric" value="${Math.round(data.resp)}"></td>
@@ -446,7 +627,7 @@ function createRow(data){
     <td><div class="currency-cell"><span class="cur-sign">€</span><input class="f-blurring" type="number" min="0" step="0.01" value="${data.blurring}"></div></td>
     <td><input class="f-otcount" type="number" min="0" step="1" inputmode="numeric" value="${Math.round(data.otCount)}"></td>
     <td class="tot-cell f-tot">€ 0,00</td>
-    <td class="row-actions"><button class="del-row" title="Elimina riga">✕</button></td>
+    <td class="row-actions"><button class="del-row" title="${t('delRowTitle')}">✕</button></td>
   `;
   rowsBody.appendChild(tr);
 
@@ -465,6 +646,9 @@ function createRow(data){
     recalc();
   });
 }
+
+const DASHBOARD_RATE = 10; // sovrapprezzo dashboard, € per intervista, su tutto il progetto
+let dashboardActive = false;
 
 function recalc(){
   let totN = 0;
@@ -489,13 +673,29 @@ function recalc(){
     totEuro += rowTot;
   });
 
+  const dashboardRow = document.getElementById('dashboardRow');
+  let dashboardCost = 0;
+  if(dashboardActive){
+    dashboardCost = totN * DASHBOARD_RATE;
+    document.getElementById('txtDashboardLine').innerHTML = t('dashboardLine')(totN);
+    document.getElementById('dashboardCost').textContent = fmtEuro(dashboardCost);
+    dashboardRow.style.display = '';
+  } else {
+    dashboardRow.style.display = 'none';
+  }
+
   document.getElementById('totN').textContent = totN;
-  document.getElementById('totEuroSmall').textContent = fmtEuro(totEuro);
-  document.getElementById('grandTotal').textContent = fmtEuro(totEuro);
+  document.getElementById('grandTotal').textContent = fmtEuro(totEuro + dashboardCost);
 }
 
 document.getElementById('addRowBtn').addEventListener('click', () => {
   createRow();
+  recalc();
+});
+
+document.getElementById('dashboardBtn').addEventListener('click', () => {
+  dashboardActive = !dashboardActive;
+  document.getElementById('dashboardBtn').classList.toggle('btn-toggle-active', dashboardActive);
   recalc();
 });
 
@@ -547,7 +747,8 @@ function saveHistory(history){
 function formatDateIt(dateRaw){
   if(!dateRaw) return '—';
   const d = new Date(dateRaw + 'T00:00:00');
-  return d.toLocaleDateString('it-IT', {day:'2-digit', month:'2-digit', year:'numeric'});
+  const locale = currentLang === 'en' ? 'en-GB' : 'it-IT';
+  return d.toLocaleDateString(locale, {day:'2-digit', month:'2-digit', year:'numeric'});
 }
 
 function archiveCurrentQuote(){
@@ -561,6 +762,7 @@ function archiveCurrentQuote(){
     savedAt: new Date().toISOString(),
     meta,
     rows,
+    dashboardActive,
     grandTotal: document.getElementById('grandTotal').textContent
   };
   const history = loadHistory();
@@ -572,18 +774,18 @@ function renderHistory(){
   const list = document.getElementById('historyList');
   const history = loadHistory();
   if(history.length === 0){
-    list.innerHTML = '<div class="history-empty">Nessun preventivo salvato ancora. Verrà aggiunto qui ogni volta che clicchi "Nuovo preventivo".</div>';
+    list.innerHTML = `<div class="history-empty">${t('historyEmpty')}</div>`;
     return;
   }
   list.innerHTML = history.map(entry => `
     <div class="history-item">
       <div class="history-info">
-        <div class="history-title">${entry.meta.ref || 'Senza rif.'} — ${entry.meta.client || 'Cliente n.d.'}</div>
-        <div class="history-sub">${entry.meta.project || 'Progetto n.d.'} · ${formatDateIt(entry.meta.date)} · ${entry.grandTotal}</div>
+        <div class="history-title">${entry.meta.ref || t('noRef')} — ${entry.meta.client || t('noClient')}</div>
+        <div class="history-sub">${entry.meta.project || t('noProject')} · ${formatDateIt(entry.meta.date)} · ${entry.grandTotal}</div>
       </div>
       <div class="history-actions">
-        <button class="btn-secondary history-load" data-id="${entry.id}">Carica</button>
-        <button class="btn-danger history-del" data-id="${entry.id}">Elimina</button>
+        <button class="btn-secondary history-load" data-id="${entry.id}">${t('load')}</button>
+        <button class="btn-danger history-del" data-id="${entry.id}">${t('del')}</button>
       </div>
     </div>
   `).join('');
@@ -609,6 +811,10 @@ function loadQuote(id){
 
   rowsBody.innerHTML = '';
   entry.rows.forEach(r => createRow(r));
+
+  dashboardActive = !!entry.dashboardActive;
+  document.getElementById('dashboardBtn').classList.toggle('btn-toggle-active', dashboardActive);
+
   recalc();
 
   document.getElementById('historyPanel').classList.remove('open');
@@ -632,6 +838,8 @@ document.getElementById('newQuoteBtn').addEventListener('click', () => {
   updateMeta();
 
   createRow();
+  dashboardActive = false;
+  document.getElementById('dashboardBtn').classList.remove('btn-toggle-active');
   recalc();
 });
 
@@ -646,15 +854,11 @@ function updateMeta(){
   const project = document.getElementById('projectName').value || '—';
   const ref = document.getElementById('quoteRef').value || '—';
   const dateRaw = document.getElementById('quoteDate').value;
-  let dateOut = '—';
-  if(dateRaw){
-    const d = new Date(dateRaw + 'T00:00:00');
-    dateOut = d.toLocaleDateString('it-IT', {day:'2-digit', month:'2-digit', year:'numeric'});
-  }
+  const dateOut = dateRaw ? formatDateIt(dateRaw) : '—';
   document.getElementById('docMetaOut').innerHTML = `
-    <div><b>Cliente:</b> ${client}</div>
-    <div><b>Progetto:</b> ${project}</div>
-    <div><b>Rif.:</b> ${ref} &nbsp;|&nbsp; <b>Data:</b> ${dateOut}</div>
+    <div><b>${t('docClient')}</b> ${client}</div>
+    <div><b>${t('docProject')}</b> ${project}</div>
+    <div><b>${t('docRef')}</b> ${ref} &nbsp;|&nbsp; <b>${t('docDate')}</b> ${dateOut}</div>
   `;
 }
 ['clientName','projectName','quoteRef','quoteDate'].forEach(id => {
@@ -677,8 +881,7 @@ document.getElementById('downloadBtn').addEventListener('click', () => {
 
 // init
 defaultRows.forEach(createRow);
-recalc();
-renderHistory();
+applyLanguage(currentLang);
 </script>
 
 </body>
