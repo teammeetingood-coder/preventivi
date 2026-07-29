@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<title>Meetingood — Generatore Preventivi</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<style>
+  :root{
+    --navy:#1c2e4a;
+    --blue:#3d5a99;
+    --blue-dark:#2d4478;
+    --blue-light:#eef2fa;
+    --blue-band:#dbe4f5;
+    --line:#c6d3ea;
+    --ink:#1c2230;
+    --paper:#ffffff;
+    --accent:#6fa8dc;
+    --good:#2f7d5a;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:'Segoe UI', Arial, sans-serif;
+    background:#f2f4f8;
+    color:var(--ink);
+    padding:28px 16px 60px;
+  }
+  .app{
+    max-width:1180px;
+    margin:0 auto;
+  }
+  .toolbar{
+    display:flex;
+    flex-wrap:wrap;
+    gap:10px;
+    align-items:center;
+    justify-content:space-between;
+    margin-bottom:18px;
+  }
+  .toolbar h1{
+    font-size:20px;
+    margin:0;
+    color:var(--navy);
+    letter-spacing:.2px;
+  }
+  .toolbar .sub{
+    font-size:12.5px;
+    color:#6b7590;
+    margin-top:2px;
+  }
+  .btns{display:flex; gap:8px; flex-wrap:wrap;}
+  button{
+    font-family:inherit;
+    font-size:13px;
+    font-weight:600;
+    border:none;
+    border-radius:7px;
+    padding:9px 14px;
+    cursor:pointer;
+    transition:transform .08s ease, box-shadow .12s ease;
+  }
+  button:active{transform:translateY(1px);}
+  .btn-primary{background:var(--navy); color:#fff;}
+  .btn-primary:hover{background:var(--blue-dark);}
+  .btn-secondary{background:#fff; color:var(--navy); border:1px solid var(--line);}
+  .btn-secondary:hover{background:var(--blue-light);}
+  .btn-danger{background:#fff; color:#b4472f; border:1px solid #f0c9bd;}
+  .btn-danger:hover{background:#fdf1ee;}
+
+  .meta-card{
+    background:var(--paper);
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:16px 18px;
+    margin-bottom:16px;
+    display:grid;
+    grid-template-columns:repeat(4, 1fr);
+    gap:12px;
+  }
+  .meta-field label{
+    display:block;
+    font-size:10.5px;
+    text-transform:uppercase;
+    letter-spacing:.6px;
+    color:#8590aa;
+    font-weight:700;
+    margin-bottom:4px;
+  }
+  .meta-field input{
+    width:100%;
+    border:1px solid var(--line);
+    border-radius:6px;
+    padding:7px 9px;
+    font-size:13.5px;
+    font-family:inherit;
+    color:var(--ink);
+    background:#fbfcfe;
+  }
+  .meta-field input:focus{outline:2px solid #b9c9ec; outline-offset:0;}
+
+  .history-panel{
+    background:var(--paper);
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:16px 18px;
+    margin-bottom:16px;
+    display:none;
+  }
+  .history-panel.open{display:block;}
+  .history-head{
+    display:flex;
+    flex-direction:column;
+    gap:2px;
+    margin-bottom:10px;
+    padding-bottom:10px;
+    border-bottom:1px solid var(--line);
+  }
+  .history-head h2{
+    margin:0;
+    font-size:15px;
+    color:var(--navy);
+  }
+  .history-note{
+    font-size:11px;
+    color:#8590aa;
+  }
+  .history-empty{
+    font-size:12.5px;
+    color:#8590aa;
+    padding:10px 2px;
+  }
+  .history-item{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:10px;
+    padding:10px 6px;
+    border-bottom:1px solid var(--blue-light);
+  }
+  .history-item:last-child{border-bottom:none;}
+  .history-title{
+    font-size:13px;
+    font-weight:700;
+    color:var(--blue-dark);
+  }
+  .history-sub{
+    font-size:11.5px;
+    color:#8590aa;
+    margin-top:2px;
+  }
+  .history-actions{
+    display:flex;
+    gap:6px;
+    flex-shrink:0;
+  }
+  .history-actions button{padding:6px 10px; font-size:12px;}
+
+  /* Capture area = what gets exported as image */
+  #capture{
+    background:var(--paper);
+    border-radius:10px;
+    padding:20px 20px 14px;
+    border:1px solid var(--line);
+  }
+  .doc-head{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-end;
+    margin-bottom:14px;
+    padding-bottom:12px;
+    border-bottom:2px solid var(--navy);
+  }
+  .doc-head .brand{
+    display:flex;
+    align-items:center;
+    gap:10px;
+  }
+  .doc-head .brand img{
+    height:52px;
+    width:52px;
+    border-radius:50%;
+    object-fit:cover;
+    display:block;
+  }
+  .doc-head .brand .brand-text{
+    font-size:19px;
+    font-weight:800;
+    color:var(--navy);
+    letter-spacing:.3px;
+    line-height:1.25;
+  }
+  .doc-head .brand .brand-text span{color:var(--accent);}
+  .doc-head .brand .brand-sub{
+    display:block;
+    font-size:10.5px;
+    font-weight:600;
+    color:#8590aa;
+    letter-spacing:.3px;
+  }
+  .doc-head .doc-meta{
+    text-align:right;
+    font-size:12px;
+    color:#5a6785;
+    line-height:1.5;
+  }
+  .doc-head .doc-meta b{color:var(--ink);}
+
+  table{
+    width:100%;
+    border-collapse:collapse;
+    font-size:13px;
+  }
+  thead th{
+    background:var(--navy);
+    color:#fff;
+    padding:10px 8px;
+    font-size:11.5px;
+    text-transform:uppercase;
+    letter-spacing:.4px;
+    text-align:center;
+    font-weight:700;
+  }
+  thead th:first-child{ text-align:left; border-radius:6px 0 0 0;}
+  thead th:last-child{ border-radius:0 6px 0 0;}
+  tbody td{
+    padding:6px 6px;
+    text-align:center;
+    border-bottom:1px solid var(--line);
+  }
+  tbody tr:nth-child(even){background:var(--blue-light);}
+  tbody td.market-cell{ text-align:left; font-weight:600; color:var(--blue-dark);}
+  tbody input{
+    width:100%;
+    border:1px solid transparent;
+    background:transparent;
+    text-align:center;
+    font-family:inherit;
+    font-size:13px;
+    padding:5px 3px;
+    border-radius:5px;
+    color:var(--ink);
+  }
+  tbody input.market-input{ text-align:left; font-weight:600; color:var(--blue-dark);}
+  tbody input:hover{border-color:var(--line);}
+  tbody input:focus{outline:none; border-color:var(--blue); background:#fff;}
+  td.tot-cell{ font-weight:700; color:var(--navy);}
+  td.row-actions{ width:34px; padding:0;}
+  .del-row{
+    background:none; border:none; color:#c98a76; font-size:16px; cursor:pointer; padding:2px 6px; border-radius:5px; font-weight:700;
+  }
+  .del-row:hover{background:#fdf1ee; color:#b4472f;}
+  .currency-cell{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:2px;
+  }
+  .currency-cell .cur-sign{
+    font-size:11.5px;
+    color:#8590aa;
+    font-weight:600;
+  }
+  .currency-cell input{
+    text-align:left;
+    padding-left:2px;
+    width:100%;
+  }
+  .ot-toggle{
+    display:flex; align-items:center; justify-content:center; gap:4px; font-size:10px; color:#8590aa;
+  }
+  .ot-toggle input{width:auto; accent-color:var(--navy);}
+
+  tfoot td{
+    padding:9px 8px;
+    font-weight:800;
+    color:var(--navy);
+    background:var(--blue-band);
+    border-top:2px solid var(--navy);
+  }
+  tfoot .tot-label{ text-align:left; font-size:13px;}
+  tfoot .grand-row td{
+    background:var(--navy);
+    color:#fff;
+    font-size:15px;
+    border-radius:0 0 6px 6px;
+  }
+  tfoot .grand-row td:first-child{border-radius:0 0 0 6px;}
+
+  .add-row-bar{
+    margin-top:10px;
+    padding-top:2px;
+  }
+  .notes{
+    margin-top:14px;
+    font-size:11px;
+    color:#8590aa;
+    line-height:1.5;
+  }
+  .formula-hint{
+    font-size:11px;
+    color:#8590aa;
+    margin:10px 2px 0;
+  }
+  .formula-hint code{
+    background:#eef2fa;
+    padding:1px 5px;
+    border-radius:4px;
+    color:var(--blue-dark);
+  }
+
+  @media (max-width:760px){
+    .meta-card{grid-template-columns:repeat(2,1fr);}
+    table{font-size:11px;}
+    thead th{font-size:9.5px; padding:7px 4px;}
+    .doc-head{flex-direction:column; align-items:flex-start; gap:8px;}
+    .doc-head .doc-meta{text-align:left;}
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <div class="toolbar">
+    <div>
+      <h1>Generatore Preventivi — Meetingood</h1>
+      <div class="sub">Compila la tabella, il totale si aggiorna da solo. Scarica come immagine da allegare all'email.</div>
+    </div>
+    <div class="btns">
+      <button class="btn-secondary" id="newQuoteBtn">＋ Nuovo preventivo</button>
+      <button class="btn-secondary" id="historyBtn">🕘 Cronologia</button>
+      <button class="btn-secondary" id="addRowBtn">+ Riga mercato</button>
+      <button class="btn-primary" id="downloadBtn">⬇ Scarica come immagine</button>
+    </div>
+  </div>
+
+  <div class="meta-card">
+    <div class="meta-field">
+      <label>Cliente</label>
+      <input type="text" id="clientName" placeholder="Nome cliente / istituto">
+    </div>
+    <div class="meta-field">
+      <label>Progetto</label>
+      <input type="text" id="projectName" placeholder="Nome progetto / studio">
+    </div>
+    <div class="meta-field">
+      <label>Rif. preventivo</label>
+      <input type="text" id="quoteRef" placeholder="es. PRE-2026-014">
+    </div>
+    <div class="meta-field">
+      <label>Data</label>
+      <input type="date" id="quoteDate">
+    </div>
+  </div>
+
+  <div class="history-panel" id="historyPanel">
+    <div class="history-head">
+      <h2>Cronologia preventivi</h2>
+      <span class="history-note">Salvata solo in questo browser (locale, nessun database) — creando un nuovo preventivo, quello attuale viene archiviato qui.</span>
+    </div>
+    <div id="historyList"></div>
+  </div>
+
+  <div id="capture">
+    <div class="doc-head">
+      <div class="brand">
+        <img src="assets/logo.png" alt="Meetingood logo">
+        <div class="brand-text">Meeting<span>good</span><span class="brand-sub">online focus group by fieldgood</span></div>
+      </div>
+      <div class="doc-meta" id="docMetaOut">
+        <div><b>Cliente:</b> —</div>
+        <div><b>Progetto:</b> —</div>
+        <div><b>Rif.:</b> — &nbsp;|&nbsp; <b>Data:</b> —</div>
+      </div>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th style="width:14%">Market</th>
+          <th>N</th>
+          <th>LOI</th>
+          <th>Resp's</th>
+          <th>€/h</th>
+          <th>Transcripts</th>
+          <th>Blurring &amp;<br>Morphing</th>
+          <th>N.<br>Overtime</th>
+          <th>€ Tot</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="rowsBody"></tbody>
+      <tfoot>
+        <tr>
+          <td class="tot-label">TOT</td>
+          <td id="totN">0</td>
+          <td></td><td></td><td></td><td></td><td></td><td></td>
+          <td id="totEuroSmall">€ 0,00</td>
+          <td></td>
+        </tr>
+        <tr class="grand-row">
+          <td class="tot-label" colspan="8">TOTALE PREVENTIVO</td>
+          <td id="grandTotal">€ 0,00</td>
+          <td></td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+
+  <div class="formula-hint">
+    Formula riga: <code>€ Tot = N × LOI × (€/h + Transcripts + Blurring &amp; Morphing) + N.Overtime × LOI × 10</code>.
+    Esempio: 5 interviste, 2 in overtime, €/h 45 → 3×45 + 2×55 = 245 €. La maggiorazione overtime è fissa a 10€/h.
+    Resp's è un campo informativo e non entra nel calcolo.
+  </div>
+
+</div>
+
+<script>
+let rowId = 0;
+const rowsBody = document.getElementById('rowsBody');
+
+const defaultRows = [
+  {market:'UK', n:5, loi:1, resp:1, rate:45, transcripts:0, blurring:0, otCount:2},
+  {market:'DE', n:7, loi:1, resp:1, rate:45, transcripts:0, blurring:0, otCount:0},
+  {market:'FR', n:2, loi:1, resp:1, rate:45, transcripts:0, blurring:0, otCount:0},
+];
+
+const OT_RATE = 10; // maggiorazione overtime fissa, €/h
+
+function fmtEuro(v){
+  return '€ ' + v.toLocaleString('it-IT', {minimumFractionDigits:2, maximumFractionDigits:2});
+}
+
+function createRow(data){
+  data = data || {market:'', n:1, loi:1, resp:1, rate:0, transcripts:0, blurring:0, otCount:0};
+  const id = 'r' + (rowId++);
+  const tr = document.createElement('tr');
+  tr.dataset.id = id;
+  tr.innerHTML = `
+    <td class="market-cell"><input class="market-input" type="text" value="${data.market}" placeholder="Mercato"></td>
+    <td><input class="f-n" type="number" min="0" step="1" inputmode="numeric" value="${Math.round(data.n)}"></td>
+    <td><input class="f-loi" type="number" min="0" step="0.01" value="${data.loi}"></td>
+    <td><input class="f-resp" type="number" min="0" step="1" inputmode="numeric" value="${Math.round(data.resp)}"></td>
+    <td><div class="currency-cell"><span class="cur-sign">€</span><input class="f-rate" type="number" min="0" step="0.01" value="${data.rate}"></div></td>
+    <td><div class="currency-cell"><span class="cur-sign">€</span><input class="f-transcripts" type="number" min="0" step="0.01" value="${data.transcripts}"></div></td>
+    <td><div class="currency-cell"><span class="cur-sign">€</span><input class="f-blurring" type="number" min="0" step="0.01" value="${data.blurring}"></div></td>
+    <td><input class="f-otcount" type="number" min="0" step="1" inputmode="numeric" value="${Math.round(data.otCount)}"></td>
+    <td class="tot-cell f-tot">€ 0,00</td>
+    <td class="row-actions"><button class="del-row" title="Elimina riga">✕</button></td>
+  `;
+  rowsBody.appendChild(tr);
+
+  tr.querySelectorAll('input').forEach(inp => {
+    inp.addEventListener('input', recalc);
+  });
+  tr.querySelectorAll('.f-n, .f-resp, .f-otcount').forEach(inp => {
+    inp.addEventListener('input', () => {
+      if(inp.value !== '' && inp.value.includes('.')){
+        inp.value = Math.round(parseFloat(inp.value));
+      }
+    });
+  });
+  tr.querySelector('.del-row').addEventListener('click', () => {
+    tr.remove();
+    recalc();
+  });
+}
+
+function recalc(){
+  let totN = 0;
+  let totEuro = 0;
+  rowsBody.querySelectorAll('tr').forEach(tr => {
+    const n = Math.round(parseFloat(tr.querySelector('.f-n').value)) || 0;
+    const loi = parseFloat(tr.querySelector('.f-loi').value) || 0;
+    const rate = parseFloat(tr.querySelector('.f-rate').value) || 0;
+    const transcripts = parseFloat(tr.querySelector('.f-transcripts').value) || 0;
+    const blurring = parseFloat(tr.querySelector('.f-blurring').value) || 0;
+    const otCountInput = tr.querySelector('.f-otcount');
+    let otCount = Math.round(parseFloat(otCountInput.value)) || 0;
+    if(otCount > n){
+      otCount = n;
+      otCountInput.value = n;
+    }
+
+    const rowTot = n * loi * (rate + transcripts + blurring) + otCount * loi * OT_RATE;
+    tr.querySelector('.f-tot').textContent = fmtEuro(rowTot);
+
+    totN += n;
+    totEuro += rowTot;
+  });
+
+  document.getElementById('totN').textContent = totN;
+  document.getElementById('totEuroSmall').textContent = fmtEuro(totEuro);
+  document.getElementById('grandTotal').textContent = fmtEuro(totEuro);
+}
+
+document.getElementById('addRowBtn').addEventListener('click', () => {
+  createRow();
+  recalc();
+});
+
+// ---------- Cronologia preventivi (localStorage, nessun database) ----------
+const HISTORY_KEY = 'meetingood_quotes_history';
+
+function getMetaData(){
+  return {
+    client: document.getElementById('clientName').value,
+    project: document.getElementById('projectName').value,
+    ref: document.getElementById('quoteRef').value,
+    date: document.getElementById('quoteDate').value
+  };
+}
+
+function getRowsData(){
+  const rows = [];
+  rowsBody.querySelectorAll('tr').forEach(tr => {
+    rows.push({
+      market: tr.querySelector('.market-input').value,
+      n: parseFloat(tr.querySelector('.f-n').value) || 0,
+      loi: parseFloat(tr.querySelector('.f-loi').value) || 0,
+      resp: parseFloat(tr.querySelector('.f-resp').value) || 0,
+      rate: parseFloat(tr.querySelector('.f-rate').value) || 0,
+      transcripts: parseFloat(tr.querySelector('.f-transcripts').value) || 0,
+      blurring: parseFloat(tr.querySelector('.f-blurring').value) || 0,
+      otCount: parseFloat(tr.querySelector('.f-otcount').value) || 0
+    });
+  });
+  return rows;
+}
+
+function loadHistory(){
+  try{
+    return JSON.parse(localStorage.getItem(HISTORY_KEY)) || [];
+  }catch(e){
+    return [];
+  }
+}
+
+function saveHistory(history){
+  try{
+    localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+  }catch(e){
+    console.error('Impossibile salvare la cronologia in locale:', e);
+  }
+}
+
+function formatDateIt(dateRaw){
+  if(!dateRaw) return '—';
+  const d = new Date(dateRaw + 'T00:00:00');
+  return d.toLocaleDateString('it-IT', {day:'2-digit', month:'2-digit', year:'numeric'});
+}
+
+function archiveCurrentQuote(){
+  const meta = getMetaData();
+  const rows = getRowsData();
+  const hasContent = rows.some(r => r.market.trim() !== '') || meta.client || meta.project || meta.ref;
+  if(!hasContent) return;
+
+  const entry = {
+    id: 'q' + Date.now(),
+    savedAt: new Date().toISOString(),
+    meta,
+    rows,
+    grandTotal: document.getElementById('grandTotal').textContent
+  };
+  const history = loadHistory();
+  history.unshift(entry);
+  saveHistory(history);
+}
+
+function renderHistory(){
+  const list = document.getElementById('historyList');
+  const history = loadHistory();
+  if(history.length === 0){
+    list.innerHTML = '<div class="history-empty">Nessun preventivo salvato ancora. Verrà aggiunto qui ogni volta che clicchi "Nuovo preventivo".</div>';
+    return;
+  }
+  list.innerHTML = history.map(entry => `
+    <div class="history-item">
+      <div class="history-info">
+        <div class="history-title">${entry.meta.ref || 'Senza rif.'} — ${entry.meta.client || 'Cliente n.d.'}</div>
+        <div class="history-sub">${entry.meta.project || 'Progetto n.d.'} · ${formatDateIt(entry.meta.date)} · ${entry.grandTotal}</div>
+      </div>
+      <div class="history-actions">
+        <button class="btn-secondary history-load" data-id="${entry.id}">Carica</button>
+        <button class="btn-danger history-del" data-id="${entry.id}">Elimina</button>
+      </div>
+    </div>
+  `).join('');
+
+  list.querySelectorAll('.history-load').forEach(btn => {
+    btn.addEventListener('click', () => loadQuote(btn.dataset.id));
+  });
+  list.querySelectorAll('.history-del').forEach(btn => {
+    btn.addEventListener('click', () => deleteQuote(btn.dataset.id));
+  });
+}
+
+function loadQuote(id){
+  const history = loadHistory();
+  const entry = history.find(e => e.id === id);
+  if(!entry) return;
+
+  document.getElementById('clientName').value = entry.meta.client || '';
+  document.getElementById('projectName').value = entry.meta.project || '';
+  document.getElementById('quoteRef').value = entry.meta.ref || '';
+  document.getElementById('quoteDate').value = entry.meta.date || '';
+  updateMeta();
+
+  rowsBody.innerHTML = '';
+  entry.rows.forEach(r => createRow(r));
+  recalc();
+
+  document.getElementById('historyPanel').classList.remove('open');
+}
+
+function deleteQuote(id){
+  const history = loadHistory().filter(e => e.id !== id);
+  saveHistory(history);
+  renderHistory();
+}
+
+document.getElementById('newQuoteBtn').addEventListener('click', () => {
+  archiveCurrentQuote();
+  renderHistory();
+
+  rowsBody.innerHTML = '';
+  document.getElementById('clientName').value = '';
+  document.getElementById('projectName').value = '';
+  document.getElementById('quoteRef').value = '';
+  document.getElementById('quoteDate').valueAsDate = new Date();
+  updateMeta();
+
+  createRow();
+  recalc();
+});
+
+document.getElementById('historyBtn').addEventListener('click', () => {
+  renderHistory();
+  document.getElementById('historyPanel').classList.toggle('open');
+});
+
+// meta fields -> doc header preview
+function updateMeta(){
+  const client = document.getElementById('clientName').value || '—';
+  const project = document.getElementById('projectName').value || '—';
+  const ref = document.getElementById('quoteRef').value || '—';
+  const dateRaw = document.getElementById('quoteDate').value;
+  let dateOut = '—';
+  if(dateRaw){
+    const d = new Date(dateRaw + 'T00:00:00');
+    dateOut = d.toLocaleDateString('it-IT', {day:'2-digit', month:'2-digit', year:'numeric'});
+  }
+  document.getElementById('docMetaOut').innerHTML = `
+    <div><b>Cliente:</b> ${client}</div>
+    <div><b>Progetto:</b> ${project}</div>
+    <div><b>Rif.:</b> ${ref} &nbsp;|&nbsp; <b>Data:</b> ${dateOut}</div>
+  `;
+}
+['clientName','projectName','quoteRef','quoteDate'].forEach(id => {
+  document.getElementById(id).addEventListener('input', updateMeta);
+});
+document.getElementById('quoteDate').valueAsDate = new Date();
+updateMeta();
+
+// download as image
+document.getElementById('downloadBtn').addEventListener('click', () => {
+  const target = document.getElementById('capture');
+  html2canvas(target, {scale:2, backgroundColor:'#ffffff'}).then(canvas => {
+    const link = document.createElement('a');
+    const ref = document.getElementById('quoteRef').value.trim();
+    link.download = (ref ? ref : 'preventivo') + '.png';
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+  });
+});
+
+// init
+defaultRows.forEach(createRow);
+recalc();
+renderHistory();
+</script>
+
+</body>
+</html>
