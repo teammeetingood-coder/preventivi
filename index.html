@@ -533,6 +533,23 @@ function fmtEuro(v){
   return '€ ' + v.toLocaleString('it-IT', {minimumFractionDigits:2, maximumFractionDigits:2});
 }
 
+// Accetta sia virgola che punto come separatore decimale (tastiera italiana vs numero HTML nativo)
+function parseDecimal(v){
+  if(v === null || v === undefined) return 0;
+  const n = parseFloat(String(v).trim().replace(',', '.'));
+  return isNaN(n) ? 0 : n;
+}
+
+// Mentre si scrive, lascia digitare solo cifre e UN separatore decimale (, oppure .)
+function sanitizeDecimalInput(inp){
+  let v = inp.value.replace(/[^0-9,.]/g, '');
+  const firstSep = v.search(/[,.]/);
+  if(firstSep !== -1){
+    v = v.slice(0, firstSep + 1) + v.slice(firstSep + 1).replace(/[,.]/g, '');
+  }
+  inp.value = v;
+}
+
 function createRow(data){
   data = data || {market:'', n:1, loi:1, resp:1, rate:45, transcripts:0, blurring:0, overtime:0};
   const id = 'r' + (rowId++);
@@ -541,12 +558,12 @@ function createRow(data){
   tr.innerHTML = `
     <td class="market-cell"><input class="market-input" type="text" value="${data.market}" placeholder="${t('marketPh')}"></td>
     <td><input class="f-n" type="number" min="0" step="1" inputmode="numeric" value="${Math.round(data.n)}"></td>
-    <td><input class="f-loi" type="number" min="0" step="0.01" value="${data.loi}"></td>
+    <td><input class="f-loi" type="text" inputmode="decimal" value="${String(data.loi).replace('.', ',')}"></td>
     <td><input class="f-resp" type="number" min="0" step="1" inputmode="numeric" value="${Math.round(data.resp)}"></td>
-    <td><div class="currency-cell"><span class="cur-sign">€</span><input class="f-rate" type="number" min="0" step="0.01" value="${data.rate}"></div></td>
-    <td><div class="currency-cell"><span class="cur-sign">€</span><input class="f-transcripts" type="number" min="0" step="0.01" value="${data.transcripts}"></div></td>
-    <td><div class="currency-cell"><span class="cur-sign">€</span><input class="f-blurring" type="number" min="0" step="0.01" value="${data.blurring}"></div></td>
-    <td><div class="currency-cell"><span class="cur-sign">€</span><input class="f-overtime" type="number" min="0" step="0.01" value="${data.overtime}"></div></td>
+    <td><div class="currency-cell"><span class="cur-sign">€</span><input class="f-rate" type="text" inputmode="decimal" value="${String(data.rate).replace('.', ',')}"></div></td>
+    <td><div class="currency-cell"><span class="cur-sign">€</span><input class="f-transcripts" type="text" inputmode="decimal" value="${String(data.transcripts).replace('.', ',')}"></div></td>
+    <td><div class="currency-cell"><span class="cur-sign">€</span><input class="f-blurring" type="text" inputmode="decimal" value="${String(data.blurring).replace('.', ',')}"></div></td>
+    <td><div class="currency-cell"><span class="cur-sign">€</span><input class="f-overtime" type="text" inputmode="decimal" value="${String(data.overtime).replace('.', ',')}"></div></td>
     <td class="tot-cell f-tot">€ 0,00</td>
     <td class="row-actions"><button class="del-row" title="${t('delRowTitle')}">✕</button></td>
   `;
@@ -561,6 +578,9 @@ function createRow(data){
         inp.value = Math.round(parseFloat(inp.value));
       }
     });
+  });
+  tr.querySelectorAll('.f-loi, .f-rate, .f-transcripts, .f-blurring, .f-overtime').forEach(inp => {
+    inp.addEventListener('input', () => sanitizeDecimalInput(inp));
   });
   tr.querySelector('.del-row').addEventListener('click', () => {
     tr.remove();
@@ -588,11 +608,11 @@ function recalc(){
   rowsBody.querySelectorAll('tr').forEach(tr => {
     const n = Math.round(parseFloat(tr.querySelector('.f-n').value)) || 0;
     const loiInput = tr.querySelector('.f-loi');
-    const loi = parseFloat(loiInput.value) || 0;
-    const rate = parseFloat(tr.querySelector('.f-rate').value) || 0;
-    const transcripts = parseFloat(tr.querySelector('.f-transcripts').value) || 0;
-    const blurring = parseFloat(tr.querySelector('.f-blurring').value) || 0;
-    const overtime = parseFloat(tr.querySelector('.f-overtime').value) || 0;
+    const loi = parseDecimal(loiInput.value);
+    const rate = parseDecimal(tr.querySelector('.f-rate').value);
+    const transcripts = parseDecimal(tr.querySelector('.f-transcripts').value);
+    const blurring = parseDecimal(tr.querySelector('.f-blurring').value);
+    const overtime = parseDecimal(tr.querySelector('.f-overtime').value);
 
     const effLoi = billedLoi(loi);
     loiInput.title = `LOI fatturato: ${effLoi}h`;
@@ -648,12 +668,12 @@ function getRowsData(){
     rows.push({
       market: tr.querySelector('.market-input').value,
       n: parseFloat(tr.querySelector('.f-n').value) || 0,
-      loi: parseFloat(tr.querySelector('.f-loi').value) || 0,
+      loi: parseDecimal(tr.querySelector('.f-loi').value),
       resp: parseFloat(tr.querySelector('.f-resp').value) || 0,
-      rate: parseFloat(tr.querySelector('.f-rate').value) || 0,
-      transcripts: parseFloat(tr.querySelector('.f-transcripts').value) || 0,
-      blurring: parseFloat(tr.querySelector('.f-blurring').value) || 0,
-      overtime: parseFloat(tr.querySelector('.f-overtime').value) || 0
+      rate: parseDecimal(tr.querySelector('.f-rate').value),
+      transcripts: parseDecimal(tr.querySelector('.f-transcripts').value),
+      blurring: parseDecimal(tr.querySelector('.f-blurring').value),
+      overtime: parseDecimal(tr.querySelector('.f-overtime').value)
     });
   });
   return rows;
