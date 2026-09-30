@@ -439,8 +439,8 @@
   </div>
 
   <div class="formula-hint" id="txtFormulaHint">
-    Formula riga: <code>€ Tot = N × LOI × (€/h + Transcripts + Blurring &amp; Morphing) + N.Overtime × LOI × 10</code>.
-    Esempio: 5 interviste, 2 in overtime, €/h 45 → 3×45 + 2×55 = 245 €. La maggiorazione overtime è fissa a 10€/h.
+    Formula riga: <code>€ Tot = N × LOI × (€/h + Transcripts + Blurring &amp; Morphing) + N.Overtime × 10</code>.
+    L'overtime è sempre 10€ fissi ad intervista, indipendentemente dalla durata (LOI). Esempio: 5 interviste, LOI 2, 2 in overtime, €/h 45 → (5×2×45) + (2×10) = 470 €.
     Resp's è un campo informativo e non entra nel calcolo. Se attivi "Dashboard", si aggiungono 10€ per ogni intervista di tutto il preventivo (tutti i mercati).
   </div>
 
@@ -589,7 +589,7 @@ function recalc(){
       otCountInput.value = n;
     }
 
-    const rowTot = n * loi * (rate + transcripts + blurring) + otCount * loi * OT_RATE;
+    const rowTot = n * loi * (rate + transcripts + blurring) + otCount * OT_RATE;
     tr.querySelector('.f-tot').textContent = fmtEuro(rowTot);
 
     totN += n;
