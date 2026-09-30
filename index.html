@@ -415,7 +415,7 @@
           <th id="thRate">€/h</th>
           <th id="thTranscripts">Transcripts</th>
           <th id="thBlurring">Blurring &amp;<br>Morphing</th>
-          <th id="thOvertime">Overtime</th>
+          <th id="thOvertime">N.<br>Overtime</th>
           <th id="thTot">€ Tot</th>
           <th></th>
         </tr>
@@ -439,13 +439,13 @@
   </div>
 
   <div class="formula-hint" id="txtFormulaHint">
-    Formula riga: <code>€ Tot = N × LOI fatturato × (€/h + Transcripts + Blurring &amp; Morphing + Overtime)</code>.
+    Formula riga: <code>€ Tot = N × LOI fatturato × (€/h + Transcripts + Blurring &amp; Morphing) + N.Overtime × 10</code>.
     Il LOI inserito viene arrotondato per eccesso a scaglioni di mezz'ora ai fini del calcolo: LOI ≤ 1 → fatturato 1h; da 1 a 1,5 → 1,5h; da 1,5 a 2 → 2h (e così via). Passa il mouse sul campo LOI per vedere le ore fatturate.
-    Overtime funziona esattamente come Transcripts e Blurring &amp; Morphing: è un importo per intervista che si somma alla tariffa oraria.
+    N. Overtime indica quante delle N interviste sono in overtime: ognuna aggiunge 10€ fissi, indipendentemente da LOI e €/h (non può superare N).
     Resp's è un campo informativo e non entra nel calcolo. Se attivi "Dashboard", si aggiungono 10€ per ogni intervista di tutto il preventivo (tutti i mercati).
   </div>
 
-  <div style="text-align:right; font-size:10px; color:#b8c2d9; margin-top:6px;">build: 2026-09-30-comma-fix-2</div>
+  <div style="text-align:right; font-size:10px; color:#b8c2d9; margin-top:6px;">build: 2026-09-30-otcount-restored</div>
 
 </div>
 
@@ -462,7 +462,7 @@ const I18N = {
     thRate: '€/h',
     thTranscripts: 'Transcripts',
     thBlurring: 'Blurring &<br>Morphing',
-    thOvertime: 'Overtime',
+    thOvertime: 'N.<br>Overtime',
     thTot: '€ Tot',
     totLabel: 'TOT',
     dashboardLine: n => `Dashboard (${n} interviste × € 10,00)`
@@ -477,7 +477,7 @@ const I18N = {
     thRate: '€/h',
     thTranscripts: 'Transcripts',
     thBlurring: 'Blurring &<br>Morphing',
-    thOvertime: 'Overtime',
+    thOvertime: 'No.<br>Overtime',
     thTot: '€ Total',
     totLabel: 'TOTAL',
     dashboardLine: n => `Dashboard (${n} interviews × € 10.00)`
@@ -526,10 +526,12 @@ let rowId = 0;
 const rowsBody = document.getElementById('rowsBody');
 
 const defaultRows = [
-  {market:'UK', n:5, loi:1, resp:1, rate:45, transcripts:0, blurring:0, overtime:10},
-  {market:'DE', n:7, loi:1, resp:1, rate:45, transcripts:0, blurring:0, overtime:0},
-  {market:'FR', n:2, loi:1, resp:1, rate:45, transcripts:0, blurring:0, overtime:0},
+  {market:'UK', n:5, loi:1, resp:1, rate:45, transcripts:0, blurring:0, otCount:2},
+  {market:'DE', n:7, loi:1, resp:1, rate:45, transcripts:0, blurring:0, otCount:0},
+  {market:'FR', n:2, loi:1, resp:1, rate:45, transcripts:0, blurring:0, otCount:0},
 ];
+
+const OT_RATE = 10; // maggiorazione overtime fissa, € per intervista in overtime (non moltiplicata per LOI)
 
 function fmtEuro(v){
   return '€ ' + v.toLocaleString('it-IT', {minimumFractionDigits:2, maximumFractionDigits:2});
@@ -553,7 +555,7 @@ function sanitizeDecimalInput(inp){
 }
 
 function createRow(data){
-  data = data || {market:'', n:1, loi:1, resp:1, rate:45, transcripts:0, blurring:0, overtime:0};
+  data = data || {market:'', n:1, loi:1, resp:1, rate:45, transcripts:0, blurring:0, otCount:0};
   const id = 'r' + (rowId++);
   const tr = document.createElement('tr');
   tr.dataset.id = id;
@@ -565,7 +567,7 @@ function createRow(data){
     <td><div class="currency-cell"><span class="cur-sign">€</span><input class="f-rate" type="text" inputmode="decimal" value="${String(data.rate).replace('.', ',')}"></div></td>
     <td><div class="currency-cell"><span class="cur-sign">€</span><input class="f-transcripts" type="text" inputmode="decimal" value="${String(data.transcripts).replace('.', ',')}"></div></td>
     <td><div class="currency-cell"><span class="cur-sign">€</span><input class="f-blurring" type="text" inputmode="decimal" value="${String(data.blurring).replace('.', ',')}"></div></td>
-    <td><div class="currency-cell"><span class="cur-sign">€</span><input class="f-overtime" type="text" inputmode="decimal" value="${String(data.overtime).replace('.', ',')}"></div></td>
+    <td><input class="f-otcount" type="number" min="0" step="1" inputmode="numeric" value="${Math.round(data.otCount)}"></td>
     <td class="tot-cell f-tot">€ 0,00</td>
     <td class="row-actions"><button class="del-row" title="${t('delRowTitle')}">✕</button></td>
   `;
@@ -574,14 +576,14 @@ function createRow(data){
   tr.querySelectorAll('input').forEach(inp => {
     inp.addEventListener('input', recalc);
   });
-  tr.querySelectorAll('.f-n, .f-resp').forEach(inp => {
+  tr.querySelectorAll('.f-n, .f-resp, .f-otcount').forEach(inp => {
     inp.addEventListener('input', () => {
       if(inp.value !== '' && inp.value.includes('.')){
         inp.value = Math.round(parseFloat(inp.value));
       }
     });
   });
-  tr.querySelectorAll('.f-loi, .f-rate, .f-transcripts, .f-blurring, .f-overtime').forEach(inp => {
+  tr.querySelectorAll('.f-loi, .f-rate, .f-transcripts, .f-blurring').forEach(inp => {
     inp.addEventListener('input', () => sanitizeDecimalInput(inp));
   });
   tr.querySelector('.del-row').addEventListener('click', () => {
@@ -614,12 +616,17 @@ function recalc(){
     const rate = parseDecimal(tr.querySelector('.f-rate').value);
     const transcripts = parseDecimal(tr.querySelector('.f-transcripts').value);
     const blurring = parseDecimal(tr.querySelector('.f-blurring').value);
-    const overtime = parseDecimal(tr.querySelector('.f-overtime').value);
+    const otCountInput = tr.querySelector('.f-otcount');
+    let otCount = Math.round(parseFloat(otCountInput.value)) || 0;
+    if(otCount > n){
+      otCount = n;
+      otCountInput.value = n;
+    }
 
     const effLoi = billedLoi(loi);
     loiInput.title = `LOI fatturato: ${effLoi}h`;
 
-    const rowTot = n * effLoi * (rate + transcripts + blurring + overtime);
+    const rowTot = n * effLoi * (rate + transcripts + blurring) + otCount * OT_RATE;
     tr.querySelector('.f-tot').textContent = fmtEuro(rowTot);
 
     totN += n;
@@ -675,7 +682,7 @@ function getRowsData(){
       rate: parseDecimal(tr.querySelector('.f-rate').value),
       transcripts: parseDecimal(tr.querySelector('.f-transcripts').value),
       blurring: parseDecimal(tr.querySelector('.f-blurring').value),
-      overtime: parseDecimal(tr.querySelector('.f-overtime').value)
+      otCount: parseFloat(tr.querySelector('.f-otcount').value) || 0
     });
   });
   return rows;
